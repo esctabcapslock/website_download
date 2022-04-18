@@ -19,7 +19,8 @@ require('http').createServer((req,res)=>{
     }
 
     stat( decodeURI(URL), (err,stats)=>{
-        function _404(){
+        function _404(err){
+            console.log('_404_err',err)
             res.statusCode=404;
             res.end('404 Page Not Found')
             return;
@@ -34,12 +35,12 @@ require('http').createServer((req,res)=>{
                 try{
                 const ar_ln = readdirSync(dir_path)
                 const file_anme_1 = ar_ln.filter(v=>RegExp('^'+file_name+'\\\.(.+)$').test(v))[0]
-                console.log('fn1',file_anme_1)
-                if(!file_anme_1){_404(); return;}
+                console.log('[file_anme_1]',file_anme_1,file_name,)
+                if(!file_anme_1){_404('exf1'); return;}
                 URL = dir_path+'/'+file_anme_1
                 stats = statSync(URL)
-                }catch{_404();return;}
-            }else{_404();return;}
+                }catch(er){_404(er);return;}
+            }else{_404('else');return;}
         }
         if(stats.isDirectory()){
             
@@ -77,14 +78,14 @@ require('http').createServer((req,res)=>{
                 'Content-Length': stats.size,
                 'Accept-Ranges': 'bytes',
             });
-            const readStream = createReadStream(decodeURI(URL))
+            const readStream = createReadStream((URL))//decodeURI
             readStream.pipe(res);
         } else {
             const start = parts[0];
             const MAX_CHUNK_SIZE = 1024 * 1024 * 8;
             const end = Math.min((parts[1] < stats.size - 1) ? parts[1] : stats.size - 1, start + MAX_CHUNK_SIZE - 1)
             console.log('[file-분할전송 - else]', start, end, '크기:', stats.size, parts);
-            const readStream = createReadStream(decodeURI(URL), { start, end });
+            const readStream = createReadStream((URL), { start, end });//decodeURI
             res.writeHead((end == stats.size) ? 206 : 206, { //이어진다는 뜻
                 'Content-Type': file_type,
                 'Accept-Ranges': 'bytes',
